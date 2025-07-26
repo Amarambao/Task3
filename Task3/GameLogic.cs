@@ -67,8 +67,8 @@ namespace Task3
                 PlayerSelectedDice = SelectDice();
             }
 
-            SelectDiceRoll("my", ServerSelectedDice.Value);
-            SelectDiceRoll("your", PlayerSelectedDice);
+            SelectDiceRoll(false, ServerSelectedDice.Value);
+            SelectDiceRoll(true, PlayerSelectedDice);
 
             TableGeneration.DisplayMessages("THE END", [GameResultInfo()]);
         }
@@ -80,8 +80,10 @@ namespace Task3
             return PlayerInput(() => TableGeneration.WinProbabilityExplanation(Dices), Dices.Count, true);
         }
 
-        private void SelectDiceRoll(string whichRoll, int diceIndex)
+        private void SelectDiceRoll(bool isPlayerRoll, int diceIndex)
         {
+            var whichRoll = isPlayerRoll ? "your" : "my";
+
             var key = KeyGeneration.Generate();
             var serverNumber = RandomNumberGenerator.GetInt32(2);
             var serverHmac = Hmac.Calculate($"{serverNumber}", key);
@@ -104,8 +106,18 @@ namespace Task3
             {
                 $"My number is {serverNumber} (KEY={Convert.ToHexString(key)}).",
                 $"The fair number generation result is {serverNumber} + {playerNumber} = {rollResult} (mod 6).",
-                $"{whichRoll.ToUpper()} roll result is {Dices[ServerSelectedDice!.Value][rollResult]}."
             };
+
+            if (isPlayerRoll)
+            {
+                PlayerDiceRollResult = Dices[PlayerSelectedDice][rollResult];
+                messages.Add($"{whichRoll.ToUpper()} roll result is {PlayerSelectedDice}.");
+            }
+            else
+            {
+                ServerDiceRollResult = Dices[ServerSelectedDice!.Value][rollResult];
+                messages.Add($"{whichRoll.ToUpper()} roll result is {ServerDiceRollResult}.");
+            }
 
             TableGeneration.DisplayMessages($"{whichRoll.ToUpper()} DICE ROLL RESULT", messages);
         }
