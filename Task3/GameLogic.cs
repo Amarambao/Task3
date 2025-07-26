@@ -31,7 +31,7 @@ namespace Task3
                 $"\n(HMAC={Convert.ToHexString(serverHmac)})." +
                 $"\nTry to guess my selection.");
 
-            var playerNumber = PlayerInput(() => Console.WriteLine("Deciding who pick dice first.\n50% chance to guess"), 2, false);
+            var playerNumber = PlayerInput(() => Console.WriteLine("Deciding who pick dice first.\n50% chance to guess\n"), 2, false);
 
             var playerHmac = Hmac.Calculate($"{playerNumber}", key);
 
@@ -168,9 +168,10 @@ namespace Task3
 
                 Console.WriteLine($"{selectionOptions}{selectionValues}");
             }
-            Console.WriteLine("? - help");
-            Console.WriteLine("X - exit"); 
-            Console.Write("Your selection?: ");
+            Console.Write(
+                "? - help\n" +
+                "X - exit\n" +
+                "Your selection: ");
         }
     }
 }

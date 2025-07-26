@@ -11,10 +11,10 @@ namespace Task3
             table.Options.EnableCount = false;
 
             var columns = new List<string>() { "Dice win probability" };
-            
+
             for (int i = 0; i < dices.Count; i++)
                 columns.Add(GameLogic.GetDiceInfo(dices, i));
-            
+
             table.AddColumn(columns);
 
             for (int i = 0; i < dices.Count; i++)
@@ -26,8 +26,7 @@ namespace Task3
 
                 table.AddRow(currentRow.ToArray());
             }
-
-            Console.WriteLine(table.ToString().TrimEnd());
+            table.Write();
         }
 
         private static int CountWins(List<int> a, List<int> b)
