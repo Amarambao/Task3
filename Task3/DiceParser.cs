@@ -4,8 +4,6 @@
     {
         public static List<List<int>> ParseArgs(string[] args)
         {
-            if()
-
             var allDices = new List<List<int>>();
 
             var errorMessages = new List<string>() { String.Empty, "Exiting..." };
