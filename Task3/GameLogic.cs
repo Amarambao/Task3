@@ -111,7 +111,7 @@ namespace Task3
             if (isPlayerRoll)
             {
                 PlayerDiceRollResult = Dices[PlayerSelectedDice][rollResult];
-                messages.Add($"{whichRoll.ToUpper()} roll result is {PlayerSelectedDice}.");
+                messages.Add($"{whichRoll.ToUpper()} roll result is {PlayerDiceRollResult}.");
             }
             else
             {
