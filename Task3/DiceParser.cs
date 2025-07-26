@@ -6,26 +6,30 @@
         {
             var allDices = new List<List<int>>();
 
-            var errorMessages = new List<string>() { String.Empty, "Exiting..." };
-
             if (args.Length < 3)
-                ValidationHandler.ParsingDicesError("Not enough dice sets.");
+                ParsingDicesError("Not enough dice sets.\nExiting");
 
             for (int i = 0; i < args.Length; i++)
             {
                 var diceRolls = args[i].Split(',', StringSplitOptions.RemoveEmptyEntries);
 
                 if (diceRolls.Length != 6)
-                    ValidationHandler.ParsingDicesError("Wrong ammount of rolls on dice.");
+                    ParsingDicesError("Wrong ammount of rolls on dice.\nExiting");
 
                 foreach (var roll in diceRolls)
                     if (!int.TryParse(roll, out var rollInt))
-                        ValidationHandler.ParsingDicesError("Please use numbers only.");
+                        ParsingDicesError("Please use numbers only.\nExiting");
 
                 allDices.Add(diceRolls.Select(int.Parse).ToList());
             }
 
             return allDices;
+        }
+
+        private static void ParsingDicesError(string errorMessage)
+        {
+            Console.WriteLine($"ERROR:\n{errorMessage}");
+            Environment.Exit(0);
         }
     }
 }
