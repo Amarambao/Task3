@@ -1,5 +1,4 @@
-﻿using ConsoleTables;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace Task3
@@ -8,15 +7,14 @@ namespace Task3
     {
         public List<List<int>> Dices { get; set; }
 
-        public int PlayerSelectedDice { get; set; }
-        public int? ServerSelectedDice { get; set; }
-
-        public int PlayerDiceRollResult { get; set; }
-        public int ServerDiceRollResult { get; set; }
+        public CharacterInfo Player { get; set; }
+        public CharacterInfo Server { get; set; }
 
         public GameLogic(List<List<int>> dices)
         {
             Dices = dices;
+            Player = new CharacterInfo("player");
+            Server = new CharacterInfo("server");
         }
 
         public void StartGame()
@@ -26,10 +24,10 @@ namespace Task3
             var serverHmac = Hmac.Calculate($"{serverNumber}", key);
 
             Console.WriteLine(
-                $"Let's determine who makes the first move." +
-                $"\nI selected a random value in the range 0..1." +
-                $"\n(HMAC={Convert.ToHexString(serverHmac)})." +
-                $"\nTry to guess my selection.");
+                $"Let's determine who makes the first move.\n" +
+                $"I selected a random value in the range 0..1.\n" +
+                $"(HMAC={Convert.ToHexString(serverHmac)}).\n" +
+                $"Try to guess my selection.\n");
 
             var playerNumber = PlayerInput(() => Console.WriteLine("Deciding who pick dice first.\n50% chance to guess\n"), 2, false);
 
@@ -45,28 +43,27 @@ namespace Task3
 
             if (CryptographicOperations.FixedTimeEquals(serverHmac, playerHmac))
             {
-                Console.WriteLine("YOU WON!!!\nPlease select dice.");
+                Console.WriteLine("YOU WON!!!\nPlease select dice.\n");
 
-                PlayerSelectedDice = SelectDice();
+                Player.SelectedDice = SelectDice();
 
-                ServerSelectedDice = RandomNumberGenerator.GetInt32(Dices.Count);
-                while (PlayerSelectedDice == ServerSelectedDice)
-                    ServerSelectedDice = RandomNumberGenerator.GetInt32(Dices.Count);
+                while (Server.SelectedDice is null || Player.SelectedDice == Server.SelectedDice)
+                    Server.SelectedDice = RandomNumberGenerator.GetInt32(Dices.Count);
 
-                Console.WriteLine($"I make the second move and choose the [{GetDiceInfo(Dices, ServerSelectedDice.Value)}] dice.");
+                Console.WriteLine($"I make the second move and choose the [{GetDiceInfo(Dices, Server.SelectedDice!.Value)}] dice.");
             }
             else
             {
-                ServerSelectedDice = RandomNumberGenerator.GetInt32(Dices.Count);
-                Console.WriteLine($"I make the first move and choose the [{GetDiceInfo(Dices, ServerSelectedDice.Value)}] dice.");
+                Server.SelectedDice = RandomNumberGenerator.GetInt32(Dices.Count);
+                Console.WriteLine($"I make the first move and choose the [{GetDiceInfo(Dices, Server.SelectedDice.Value)}] dice.");
 
-                PlayerSelectedDice = SelectDice();
+                Player.SelectedDice = SelectDice();
             }
 
-            SelectDiceRoll(false, ServerSelectedDice.Value);
-            SelectDiceRoll(true, PlayerSelectedDice);
+            SelectDiceRoll(Server);
+            SelectDiceRoll(Player);
 
-            Console.WriteLine($"THE END\n" + GameResultInfo());
+            GameResultInfo();
         }
 
         private int SelectDice()
@@ -76,48 +73,46 @@ namespace Task3
             return PlayerInput(() => TableGeneration.WinProbabilityExplanation(Dices), Dices.Count, true);
         }
 
-        private void SelectDiceRoll(bool isPlayerRoll, int diceIndex)
+        private void SelectDiceRoll(CharacterInfo character)
         {
-            var whichRoll = isPlayerRoll ? "your" : "my";
-
             var key = KeyGeneration.Generate();
             var serverNumber = RandomNumberGenerator.GetInt32(2);
             var serverHmac = Hmac.Calculate($"{serverNumber}", key);
 
             Console.WriteLine(
-                $"Lets roll {whichRoll.ToUpper()} dice [{GetDiceInfo(Dices, diceIndex)}]\n" +
+                $"Lets roll {character.Name.ToUpper()} dice [{GetDiceInfo(Dices, character.SelectedDice!.Value)}]\n" +
                 "I selected a random value in the range 0..5\n" +
                 $"(HMAC={Convert.ToHexString(serverHmac)}).\n" +
-                "Add your number (modulo 6).");
+                "Add your number (modulo 6).\n");
 
             var playerNumber = PlayerInput(() => TableGeneration.WinProbabilityExplanation(Dices), 6, false);
 
             var rollResult = FairNumberGeneration.DiceRollResult([serverNumber, playerNumber]);
 
-            Console.WriteLine(
-                $"My number is {serverNumber} (KEY={Convert.ToHexString(key)})." +
-                $"The fair number generation result is {serverNumber} + {playerNumber} = {rollResult} (mod 6).");
+            character.DiceRollResult = Dices[character.SelectedDice.Value][rollResult];
 
-            if (isPlayerRoll)
-            {
-                PlayerDiceRollResult = Dices[PlayerSelectedDice][rollResult];
-                Console.WriteLine($"{whichRoll.ToUpper()} roll result is {PlayerDiceRollResult}.");
-            }
-            else
-            {
-                ServerDiceRollResult = Dices[ServerSelectedDice!.Value][rollResult];
-                Console.WriteLine($"{whichRoll.ToUpper()} roll result is {ServerDiceRollResult}.");
-            }
+            Console.WriteLine(
+                $"My number is {serverNumber}\n(KEY={Convert.ToHexString(key)}).\n" +
+                $"The fair number generation result is {serverNumber} + {playerNumber} = {rollResult} (mod 6).\n" +
+                $"{character.Name} roll result is {character.DiceRollResult}.\n");
         }
 
-        private string GameResultInfo()
+        private void GameResultInfo()
         {
-            if (PlayerDiceRollResult > ServerDiceRollResult)
-                return $"YOU WIN ({PlayerDiceRollResult} > {ServerDiceRollResult})!!!";
-            else if (PlayerDiceRollResult < ServerDiceRollResult)
-                return $"YOU LOST ({PlayerDiceRollResult} < {ServerDiceRollResult})!!!";
+            Console.WriteLine($"THE END\n");
+            var characters = new List<CharacterInfo>() { Player, Server };
+            var maxRoll = characters.Max(z => z.DiceRollResult!.Value);
+
+            if (Player.DiceRollResult == Server.DiceRollResult)
+            {
+                Console.WriteLine($"Draw ({Player.DiceRollResult} = {Server.DiceRollResult}).");
+            }
             else
-                return $"Draw ({PlayerDiceRollResult} = {ServerDiceRollResult}).";
+            {
+                var winner = characters.FirstOrDefault(z => z.DiceRollResult == maxRoll)!;
+                var loser = characters.FirstOrDefault(z => z.DiceRollResult != maxRoll)!;
+                Console.WriteLine($"{winner.Name} WON!!! :)\n{loser.Name} lost :(\n({winner.DiceRollResult} > {loser.DiceRollResult})");
+            }
         }
 
         public static string GetDiceInfo(List<List<int>> dices, int diceIndex)
@@ -157,7 +152,7 @@ namespace Task3
         {
             for (var i = 0; i < inputMaxRange; i++)
             {
-                if (isPrintingDicesInfo && i == ServerSelectedDice)
+                if (isPrintingDicesInfo && i == Server.SelectedDice)
                     continue;
 
                 var selectionOptions = $"{i} - ";
